@@ -64,8 +64,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pid.h"
 
-namespace andino {
-
 // Note: see the following links for more information regarding this class implementation:
 //  - http://brettbeauregard.com/blog/2011/04/improving-the-beginner%E2%80%99s-pid-initialization/
 //  - http://brettbeauregard.com/blog/2011/04/improving-the-beginner%E2%80%99s-pid-derivative-kick/
@@ -124,5 +122,3 @@ void PID::set_tunings(int kp, int kd, int ki, int ko) {
   ki_ = ki;
   ko_ = ko;
 }
-
-}  // namespace andino

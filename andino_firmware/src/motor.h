@@ -64,7 +64,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-namespace andino {
+#include "Arduino.h"
 
 /// @brief This class allows to control a DC motor by enabling it and setting its speed. The
 /// involved pins are expected to be connected to a full-bridge motor driver module, such as the
@@ -73,18 +73,15 @@ class Motor {
  public:
   /// @brief Constructs a new Motor object.
   ///
-  /// @param enable_gpio_pin Motor enable GPIO pin.
-  /// @param forward_gpio_pin Motor forward GPIO pin.
-  /// @param backward_gpio_pin Motor backward GPIO pin.
-  Motor(int enable_gpio_pin, int forward_gpio_pin, int backward_gpio_pin)
-      : enable_gpio_pin_(enable_gpio_pin),
-        forward_gpio_pin_(forward_gpio_pin),
-        backward_gpio_pin_(backward_gpio_pin) {}
-
-  /// @brief Sets the motor state.
-  ///
-  /// @param enabled Motor state.
-  void set_state(bool enabled);
+  /// @param pwm_gpio_pin Motor PWM GPIO pin.
+  /// @param direction_gpio_pin Motor direction GPIO pin.
+  Motor(int pwm_gpio_pin, int direction_gpio_pin, bool inverted=false)
+      : pwm_gpio_pin_(pwm_gpio_pin),
+        direction_gpio_pin_(direction_gpio_pin) {
+          pinMode(this->pwm_gpio_pin_, OUTPUT);
+          pinMode(this->direction_gpio_pin_, OUTPUT);
+          this->inverted_ = inverted;
+        }
 
   /// @brief Sets the motor speed.
   ///
@@ -98,14 +95,12 @@ class Motor {
   /// Maximum speed value.
   static constexpr int kMaxSpeed{255};
 
-  /// Motor enable GPIO pin.
-  int enable_gpio_pin_;
+  /// Motor PWM GPIO pin.
+  int pwm_gpio_pin_;
 
-  /// Motor forward GPIO pin.
-  int forward_gpio_pin_;
+  /// Motor direction GPIO pin.
+  int direction_gpio_pin_;
 
-  /// Motor backward GPIO pin.
-  int backward_gpio_pin_;
+  // If motor needs to be inverted
+  bool inverted_ = false;
 };
-
-}  // namespace andino

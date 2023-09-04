@@ -1,135 +1,217 @@
-// Code in this file is inspired by:
-// https://github.com/hbrobotics/ros_arduino_bridge/blob/indigo-devel/ros_arduino_firmware/src/libraries/ROSArduinoBridge/encoder_driver.ino
+// based on https://github.com/marcmerlin/IoTuz code - extracted and modified Encoder code
 //
-// ----------------------------------------------------------------------------
-// ros_arduino_bridge's license follows:
 //
-// Software License Agreement (BSD License)
-//
-// Copyright (c) 2012, Patrick Goebel.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//
-//   * Redistributions of source code must retain the above copyright
-//     notice, this list of conditions and the following disclaimer.
-//   * Redistributions in binary form must reproduce the above
-//     copyright notice, this list of conditions and the following
-//     disclaimer in the documentation and/or other materials provided
-//     with the distribution.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-// COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-// ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-
-// BSD 3-Clause License
-//
-// Copyright (c) 2023, Ekumen Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// 1. Redistributions of source code must retain the above copyright notice, this
-//    list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright notice,
-//    this list of conditions and the following disclaimer in the documentation
-//    and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the copyright holder nor the names of its
-//    contributors may be used to endorse or promote products derived from
-//    this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #include "encoder_driver.h"
 
-#include <stdint.h>
+#if defined(ESP8266)
+ICACHE_RAM_ATTR void AiEsp32RotaryEncoder::readEncoder_ISR()
+#else
+void IRAM_ATTR AiEsp32RotaryEncoder::readEncoder_ISR()
+#endif
+{
+	unsigned long now = millis();
+#if defined(ESP8266)
+#else
+	portENTER_CRITICAL_ISR(&(this->mux));
+#endif
+	if (this->isEnabled)
+	{
+		// code from https://www.circuitsathome.com/mcu/reading-rotary-encoder-on-arduino/
+		/**/
+		this->old_AB <<= 2; // remember previous state
 
-#include "Arduino.h"
-#include "commands.h"
-#include "hw.h"
-#include "pcint.h"
+		int8_t ENC_PORT = ((digitalRead(this->encoderBPin)) ? (1 << 1) : 0) | ((digitalRead(this->encoderAPin)) ? (1 << 0) : 0);
 
-volatile long left_enc_pos = 0L;
-volatile long right_enc_pos = 0L;
-static const int8_t ENC_STATES[] = {0, 1, -1, 0,  -1, 0,  0, 1,
-                                    1, 0, 0,  -1, 0,  -1, 1, 0};  // encoder lookup table
+		this->old_AB |= (ENC_PORT & 0x03); // add current state
 
-/* Interrupt routine for LEFT encoder, taking care of actual counting */
-void left_encoder_cb() {
-  static uint8_t enc_last = 0;
+		// this->encoder0Pos += ( this->enc_states[( this->old_AB & 0x0f )]);
+		int8_t currentDirection = (this->enc_states[(this->old_AB & 0x0f)]); //-1,0 or 1
 
-  enc_last <<= 2;                      // shift previous state two places
-  enc_last |= (PIND & (3 << 2)) >> 2;  // read the current state into lowest 2 bits
+		if (currentDirection != 0)
+		{
+			// bool ignoreCorrection = false;
+			// if (this->encoder0Pos > this->_maxEncoderValue) ignoreCorrection = true;
+			// if (this->encoder0Pos < this->_minEncoderValue) ignoreCorrection = true;
+			long prevRotaryPosition = this->encoder0Pos / this->encoderSteps;
+			this->encoder0Pos += currentDirection;
+			long newRotaryPosition = this->encoder0Pos / this->encoderSteps;
 
-  left_enc_pos += ENC_STATES[(enc_last & 0x0f)];
+			if (newRotaryPosition != prevRotaryPosition && rotaryAccelerationCoef > 1)
+			{
+				// additional movements cause acceleration?
+				//  at X ms, there should be no acceleration.
+				unsigned long accelerationLongCutoffMillis = 200;
+				// at Y ms, we want to have maximum acceleration
+				unsigned long accelerationShortCutffMillis = 4;
+
+				// compute linear acceleration
+				if (currentDirection == lastMovementDirection &&
+					currentDirection != 0 &&
+					lastMovementDirection != 0)
+				{
+					// ... but only of the direction of rotation matched and there
+					// actually was a previous rotation.
+					unsigned long millisAfterLastMotion = now - lastMovementAt;
+
+					if (millisAfterLastMotion < accelerationLongCutoffMillis)
+					{
+						if (millisAfterLastMotion < accelerationShortCutffMillis)
+						{
+							millisAfterLastMotion = accelerationShortCutffMillis; // limit to maximum acceleration
+						}
+						if (currentDirection > 0)
+						{
+							this->encoder0Pos += rotaryAccelerationCoef / millisAfterLastMotion;
+						}
+						else
+						{
+							this->encoder0Pos -= rotaryAccelerationCoef / millisAfterLastMotion;
+						}
+					}
+				}
+				this->lastMovementAt = now;
+				this->lastMovementDirection = currentDirection;
+			}
+
+//https://github.com/igorantolic/ai-esp32-rotary-encoder/issues/40
+/*
+when circling there is an issue since encoderSteps is tipically 4
+that means 4 changes for a single roary movement (step)
+so if maximum is 4 that means _maxEncoderValue is 4*4=16
+when we detact 18 we cannot go to zero since next 2 will make it wild
+Here we changed to 18 set not to 0 but to -2; 17 to -3...
+Now it seems better however that -3 divided with 4 will give -1 which is not regular -> also read() is changed to give allowed values
+It is not yet perfect for cycling options but it is much better than before
+
+optimistic view was that most of the time encoder0Pos values will be near to N*encodersteps
+*/
+			// respect limits
+			if ((this->encoder0Pos/ this->encoderSteps) > (this->_maxEncoderValue/ this->encoderSteps)){
+				// Serial.print("circle values limit HIGH");
+				// Serial.print(this->encoder0Pos);
+				//this->encoder0Pos = this->_circleValues ? this->_minEncoderValue : this->_maxEncoderValue;
+				if (_circleValues){
+					//if (!ignoreCorrection){
+						int delta  =this->_maxEncoderValue + this->encoderSteps -this->encoder0Pos;
+						this->encoder0Pos = this->_minEncoderValue-delta;
+					//}
+				} else {
+					this->encoder0Pos = this->_maxEncoderValue;
+				}
+				//this->encoder0Pos = this->_circleValues ? (this->_minEncoderValue this->encoder0Pos-this->encoderSteps) : this->_maxEncoderValue;
+				// Serial.print(" -> ");
+				// Serial.println(this->encoder0Pos);
+			} else if ((this->encoder0Pos/ this->encoderSteps) < (this->_minEncoderValue/ this->encoderSteps)){
+				// Serial.print("circle values limit LOW");
+				// Serial.print(this->encoder0Pos);
+				//this->encoder0Pos = this->_circleValues ? this->_maxEncoderValue : this->_minEncoderValue;
+				this->encoder0Pos = this->_circleValues ? this->_maxEncoderValue : this->_minEncoderValue;
+				if (_circleValues){
+					//if (!ignoreCorrection){
+						int delta  =this->_minEncoderValue +this->encoderSteps +this->encoder0Pos;
+						this->encoder0Pos = this->_maxEncoderValue+delta;
+					//}
+				} else {
+					this->encoder0Pos = this->_minEncoderValue;
+				}
+				
+				// Serial.print(" -> ");
+				// Serial.println(this->encoder0Pos);
+			}else{
+				// Serial.print("no circle values limit ");
+				// Serial.println(this->encoder0Pos);
+			}
+ 			//Serial.println(this->encoder0Pos);
+		}
+	}
+#if defined(ESP8266)
+#else
+	portEXIT_CRITICAL_ISR(&(this->mux));
+#endif
 }
 
-/* Interrupt routine for RIGHT encoder, taking care of actual counting */
-void right_encoder_cb() {
-  static uint8_t enc_last = 0;
+AiEsp32RotaryEncoder::AiEsp32RotaryEncoder(uint8_t encoder_APin, uint8_t encoder_BPin, uint8_t encoderSteps)
+{
+	this->old_AB = 0;
 
-  enc_last <<= 2;                      // shift previous state two places
-  enc_last |= (PINC & (3 << 4)) >> 4;  // read the current state into lowest 2 bits
+	this->encoderAPin = encoder_APin;
+	this->encoderBPin = encoder_BPin;
+	this->encoderSteps = encoderSteps;
 
-  right_enc_pos += ENC_STATES[(enc_last & 0x0f)];
+#if defined(ESP8266)
+	pinMode(this->encoderAPin, INPUT_PULLUP);
+	pinMode(this->encoderBPin, INPUT_PULLUP);
+#else
+	pinMode(this->encoderAPin, (areEncoderPinsPulldownforEsp32? INPUT_PULLDOWN:INPUT_PULLUP));
+	pinMode(this->encoderBPin, (areEncoderPinsPulldownforEsp32? INPUT_PULLDOWN:INPUT_PULLUP));
+#endif
+
+	//attachInterrupt(digitalPinToInterrupt(this->encoderAPin), std::bind(&AiEsp32RotaryEncoder::readEncoder_ISR, this), CHANGE);
+	//attachInterrupt(digitalPinToInterrupt(this->encoderBPin), std::bind(&AiEsp32RotaryEncoder::readEncoder_ISR, this), CHANGE);
 }
 
-void initEncoders() {
-  pinMode(LEFT_ENCODER_A_GPIO_PIN, INPUT_PULLUP);
-  pinMode(LEFT_ENCODER_B_GPIO_PIN, INPUT_PULLUP);
-  pinMode(RIGHT_ENCODER_A_GPIO_PIN, INPUT_PULLUP);
-  pinMode(RIGHT_ENCODER_B_GPIO_PIN, INPUT_PULLUP);
+void AiEsp32RotaryEncoder::setBoundaries(long minEncoderValue, long maxEncoderValue, bool circleValues)
+{
+	this->_minEncoderValue = minEncoderValue * this->encoderSteps;
+	this->_maxEncoderValue = maxEncoderValue * this->encoderSteps;
 
-  andino::PCInt::attach_interrupt(LEFT_ENCODER_A_GPIO_PIN, left_encoder_cb);
-  andino::PCInt::attach_interrupt(LEFT_ENCODER_B_GPIO_PIN, left_encoder_cb);
-  andino::PCInt::attach_interrupt(RIGHT_ENCODER_A_GPIO_PIN, right_encoder_cb);
-  andino::PCInt::attach_interrupt(RIGHT_ENCODER_B_GPIO_PIN, right_encoder_cb);
+	this->_circleValues = circleValues;
 }
 
-/* Wrap the encoder reading function */
-long readEncoder(int i) {
-  if (i == LEFT)
-    return left_enc_pos;
-  else
-    return right_enc_pos;
+long AiEsp32RotaryEncoder::read()
+{
+	//return (this->encoder0Pos / this->encoderSteps);
+	if ((this->encoder0Pos/ this->encoderSteps) > (this->_maxEncoderValue/ this->encoderSteps))
+		return this->_maxEncoderValue/ this->encoderSteps;
+ 	if ((this->encoder0Pos/ this->encoderSteps) < (this->_minEncoderValue/ this->encoderSteps))
+ 		return this->_minEncoderValue/ this->encoderSteps;
+	return (this->encoder0Pos / this->encoderSteps);
 }
 
-/* Wrap the encoder reset function */
-void resetEncoder(int i) {
-  if (i == LEFT) {
-    left_enc_pos = 0L;
-    return;
-  } else {
-    right_enc_pos = 0L;
-    return;
-  }
+void AiEsp32RotaryEncoder::setValue(long newValue)
+{
+	reset(newValue);
 }
 
-/* Wrap the encoder reset function */
-void resetEncoders() {
-  resetEncoder(LEFT);
-  resetEncoder(RIGHT);
+long AiEsp32RotaryEncoder::encoderChanged()
+{
+	long _encoder0Pos = read();
+	long encoder0Diff = _encoder0Pos - this->lastReadEncoder0Pos;
+
+	this->lastReadEncoder0Pos = _encoder0Pos;
+
+	return encoder0Diff;
+}
+
+void AiEsp32RotaryEncoder::setup(void (*ISR_callback)(void))
+{
+	attachInterrupt(digitalPinToInterrupt(this->encoderAPin), ISR_callback, CHANGE);
+	attachInterrupt(digitalPinToInterrupt(this->encoderBPin), ISR_callback, CHANGE);
+}
+
+void AiEsp32RotaryEncoder::begin()
+{
+	this->lastReadEncoder0Pos = 0;
+}
+
+void AiEsp32RotaryEncoder::reset(long newValue_)
+{
+	newValue_ = newValue_ * this->encoderSteps;
+	this->encoder0Pos = newValue_ +this->correctionOffset;
+	this->lastReadEncoder0Pos = this->encoder0Pos;
+	if (this->encoder0Pos > this->_maxEncoderValue)
+		this->encoder0Pos = this->_circleValues ? this->_minEncoderValue : this->_maxEncoderValue;
+	if (this->encoder0Pos < this->_minEncoderValue)
+		this->encoder0Pos = this->_circleValues ? this->_maxEncoderValue : this->_minEncoderValue;
+
+	this->lastReadEncoder0Pos = this->read();
+}
+
+void AiEsp32RotaryEncoder::enable()
+{
+	this->isEnabled = true;
+}
+void AiEsp32RotaryEncoder::disable()
+{
+	this->isEnabled = false;
 }

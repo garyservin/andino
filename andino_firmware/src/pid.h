@@ -29,8 +29,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-namespace andino {
-
 /// @brief This class provides a simple PID controller implementation.
 class PID {
  public:
@@ -109,5 +107,3 @@ class PID {
   /// Last computed output value.
   long last_output_;
 };
-
-}  // namespace andino

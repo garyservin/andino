@@ -63,12 +63,8 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-/* Serial port baud rate */
-#define BAUDRATE 57600
-/* Maximum PWM signal */
-#define MAX_PWM 255
-
 #include "Arduino.h"
+
 #include "hw.h"
 
 /* Include definition of serial commands */
@@ -89,19 +85,26 @@
 /* Convert the rate into an interval in milliseconds */
 const int PID_INTERVAL = 1000 / PID_RATE;
 
+#define AUTO_STOP_INTERVAL 3000
+
+/* Serial port baud rate */
+#define BAUDRATE 115200
+
+/* Maximum PWM signal */
+#define MAX_PWM 255
+
 /* Track the next time we make a PID calculation */
 unsigned long nextPID = PID_INTERVAL;
 
 /* Stop the robot if it hasn't received a movement command
   in this number of milliseconds */
-#define AUTO_STOP_INTERVAL 3000
 long lastMotorCommand = AUTO_STOP_INTERVAL;
 
 /* Variable initialization */
 
 // A pair of varibles to help parse serial commands
 int arg = 0;
-int index = 0;
+int arg_index = 0;
 
 // Variable to hold an input character
 char chr;
@@ -117,29 +120,36 @@ char argv2[16];
 long arg1;
 long arg2;
 
-// TODO(jballoffet): Make these objects local to the main function.
-andino::Motor left_motor(LEFT_MOTOR_ENABLE_GPIO_PIN, LEFT_MOTOR_FORWARD_GPIO_PIN,
-                         LEFT_MOTOR_BACKWARD_GPIO_PIN);
-andino::Motor right_motor(RIGHT_MOTOR_ENABLE_GPIO_PIN, RIGHT_MOTOR_FORWARD_GPIO_PIN,
-                          RIGHT_MOTOR_BACKWARD_GPIO_PIN);
+Motor left_motor(LEFT_MOTOR_PWM_GPIO_PIN, LEFT_MOTOR_DIRECTION_GPIO_PIN, true);
+Motor right_motor(RIGHT_MOTOR_PWM_GPIO_PIN, RIGHT_MOTOR_DIRECTION_GPIO_PIN);
 
-// TODO(jballoffet): Make these objects local to the main function.
-andino::PID left_pid_controller(30, 10, 0, 10, -MAX_PWM, MAX_PWM);
-andino::PID right_pid_controller(30, 10, 0, 10, -MAX_PWM, MAX_PWM);
+PID left_pid_controller(30, 10, 0, 10, -MAX_PWM, MAX_PWM);
+PID right_pid_controller(30, 10, 0, 10, -MAX_PWM, MAX_PWM);
 
-/* Clear the current command parameters */
+AiEsp32RotaryEncoder left_encoder(LEFT_ENCODER_A_GPIO_PIN, LEFT_ENCODER_B_GPIO_PIN, ROTARY_ENCODER_STEPS);
+AiEsp32RotaryEncoder right_encoder(RIGHT_ENCODER_A_GPIO_PIN, RIGHT_ENCODER_B_GPIO_PIN, ROTARY_ENCODER_STEPS);
+
+void IRAM_ATTR readLeftEncoderISR()
+{
+  left_encoder.readEncoder_ISR();
+}
+
+void IRAM_ATTR readRightEncoderISR()
+{
+  right_encoder.readEncoder_ISR();
+}
+
 void resetCommand() {
   cmd = 0;
   memset(argv1, 0, sizeof(argv1));
   memset(argv2, 0, sizeof(argv2));
-  arg1 = 0;
+  arg1 = 1;
   arg2 = 0;
   arg = 0;
-  index = 0;
+  arg_index = 0;
 }
 
-/* Run a command.  Commands are defined in commands.h */
-int runCommand() {
+void runCommand() {
   int i = 0;
   char* p = argv1;
   char* str;
@@ -176,14 +186,15 @@ int runCommand() {
       Serial.println("OK");
       break;
     case READ_ENCODERS:
-      Serial.print(readEncoder(LEFT));
+      Serial.print(left_encoder.read());
       Serial.print(" ");
-      Serial.println(readEncoder(RIGHT));
+      Serial.println(right_encoder.read());
       break;
     case RESET_ENCODERS:
-      resetEncoders();
-      left_pid_controller.reset(readEncoder(LEFT));
-      right_pid_controller.reset(readEncoder(RIGHT));
+      left_encoder.reset();
+      right_encoder.reset();
+      left_pid_controller.reset(left_encoder.read());
+      right_pid_controller.reset(right_encoder.read());
       Serial.println("OK");
       break;
     case MOTOR_SPEEDS:
@@ -192,8 +203,8 @@ int runCommand() {
       if (arg1 == 0 && arg2 == 0) {
         left_motor.set_speed(0);
         right_motor.set_speed(0);
-        left_pid_controller.reset(readEncoder(LEFT));
-        right_pid_controller.reset(readEncoder(RIGHT));
+        left_pid_controller.reset(left_encoder.read());
+        right_pid_controller.reset(right_encoder.read());
         left_pid_controller.enable(false);
         right_pid_controller.enable(false);
       } else {
@@ -209,8 +220,8 @@ int runCommand() {
     case MOTOR_RAW_PWM:
       /* Reset the auto stop timer */
       lastMotorCommand = millis();
-      left_pid_controller.reset(readEncoder(LEFT));
-      right_pid_controller.reset(readEncoder(RIGHT));
+      left_pid_controller.reset(left_encoder.read());
+      right_pid_controller.reset(right_encoder.read());
       // Sneaky way to temporarily disable the PID
       left_pid_controller.enable(false);
       right_pid_controller.enable(false);
@@ -246,17 +257,22 @@ int runCommand() {
 void setup() {
   Serial.begin(BAUDRATE);
 
-  initEncoders();
+  // Setup encoders
+  left_encoder.begin();
+  left_encoder.setup(readLeftEncoderISR);
+  left_encoder.setBoundaries(-MAX_VALUE_ENCODERS, MAX_VALUE_ENCODERS, false);
+  left_encoder.disableAcceleration();
 
-  // Enable motors.
-  left_motor.set_state(true);
-  right_motor.set_state(true);
+  right_encoder.begin();
+  right_encoder.setup(readRightEncoderISR);
+  right_encoder.setBoundaries(-MAX_VALUE_ENCODERS, MAX_VALUE_ENCODERS, false);
+  right_encoder.disableAcceleration();
 
-  left_pid_controller.reset(readEncoder(LEFT));
-  right_pid_controller.reset(readEncoder(RIGHT));
+  left_pid_controller.reset(left_encoder.read());
+  right_pid_controller.reset(right_encoder.read());
 }
 
-/* Enter the main loop.  Read and parse input from the serial port
+/* Main loop.  Read and parse input from the serial port
    and run any valid commands. Run a PID calculation at the target
    interval and check for auto-stop conditions.
 */
@@ -268,9 +284,9 @@ void loop() {
     // Terminate a command with a CR
     if (chr == 13) {
       if (arg == 1)
-        argv1[index] = 0;
+        argv1[arg_index] = 0;
       else if (arg == 2)
-        argv2[index] = 0;
+        argv2[arg_index] = 0;
       runCommand();
       resetCommand();
     }
@@ -280,9 +296,9 @@ void loop() {
       if (arg == 0)
         arg = 1;
       else if (arg == 1) {
-        argv1[index] = 0;
+        argv1[arg_index] = 0;
         arg = 2;
-        index = 0;
+        arg_index = 0;
       }
       continue;
     } else {
@@ -291,11 +307,11 @@ void loop() {
         cmd = chr;
       } else if (arg == 1) {
         // Subsequent arguments can be more than one character
-        argv1[index] = chr;
-        index++;
+        argv1[arg_index] = chr;
+        arg_index++;
       } else if (arg == 2) {
-        argv2[index] = chr;
-        index++;
+        argv2[arg_index] = chr;
+        arg_index++;
       }
     }
   }
@@ -304,8 +320,8 @@ void loop() {
   if (millis() > nextPID) {
     int left_motor_speed = 0;
     int right_motor_speed = 0;
-    left_pid_controller.compute(readEncoder(LEFT), left_motor_speed);
-    right_pid_controller.compute(readEncoder(RIGHT), right_motor_speed);
+    left_pid_controller.compute(left_encoder.read(), left_motor_speed);
+    right_pid_controller.compute(right_encoder.read(), right_motor_speed);
     left_motor.set_speed(left_motor_speed);
     right_motor.set_speed(right_motor_speed);
     nextPID += PID_INTERVAL;

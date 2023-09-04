@@ -64,37 +64,29 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "motor.h"
 
-#include "Arduino.h"
-
-namespace andino {
-
-void Motor::set_state(bool enabled) {
-  if (enabled) {
-    digitalWrite(enable_gpio_pin_, HIGH);
-  } else {
-    digitalWrite(enable_gpio_pin_, LOW);
-  }
-}
-
 void Motor::set_speed(int speed) {
-  bool forward = true;
+  int direction = LOW;
 
+  // If spped is less than min, invert direction
   if (speed < kMinSpeed) {
     speed = -speed;
-    forward = false;
+    direction = LOW;
   }
+  else {
+    direction = HIGH;
+  }
+
+  if (this->inverted_){
+    direction = !direction;
+  }
+
+  // If we've specified a speed greate than the max, set it to max
   if (speed > kMaxSpeed) {
     speed = kMaxSpeed;
   }
 
   // The motor speed is controlled by sending a PWM wave to the corresponding pin.
-  if (forward) {
-    analogWrite(forward_gpio_pin_, speed);
-    analogWrite(backward_gpio_pin_, 0);
-  } else {
-    analogWrite(backward_gpio_pin_, speed);
-    analogWrite(forward_gpio_pin_, 0);
-  }
-}
+  digitalWrite(direction_gpio_pin_, direction);
 
-}  // namespace andino
+  analogWrite(pwm_gpio_pin_, speed);
+}
