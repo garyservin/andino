@@ -65,6 +65,8 @@
 
 #include "Arduino.h"
 
+#include "web_serial.h"
+
 #include "hw.h"
 
 /* Include definition of serial commands */
@@ -120,6 +122,9 @@ char argv2[16];
 long arg1;
 long arg2;
 
+#define HW_SERIAL 0
+#define WEB_SERIAL 1
+
 Motor left_motor(LEFT_MOTOR_PWM_GPIO_PIN, LEFT_MOTOR_DIRECTION_GPIO_PIN, true);
 Motor right_motor(RIGHT_MOTOR_PWM_GPIO_PIN, RIGHT_MOTOR_DIRECTION_GPIO_PIN);
 
@@ -128,6 +133,14 @@ PID right_pid_controller(30, 10, 0, 10, -MAX_PWM, MAX_PWM);
 
 AiEsp32RotaryEncoder left_encoder(LEFT_ENCODER_A_GPIO_PIN, LEFT_ENCODER_B_GPIO_PIN, ROTARY_ENCODER_STEPS);
 AiEsp32RotaryEncoder right_encoder(RIGHT_ENCODER_A_GPIO_PIN, RIGHT_ENCODER_B_GPIO_PIN, ROTARY_ENCODER_STEPS);
+
+// WebSerial Config
+
+AsyncWebServer server(80);
+
+const char* ssid = "";
+const char* password = "";
+
 
 void IRAM_ATTR readLeftEncoderISR()
 {
@@ -149,7 +162,7 @@ void resetCommand() {
   arg_index = 0;
 }
 
-void runCommand() {
+void runCommand(char src=HW_SERIAL) {
   int i = 0;
   char* p = argv1;
   char* str;
@@ -159,43 +172,77 @@ void runCommand() {
 
   switch (cmd) {
     case GET_BAUDRATE:
-      Serial.println(BAUDRATE);
+      if (src == HW_SERIAL) {
+        Serial.println(BAUDRATE);
+      } else {
+        WebSerial.println(BAUDRATE);
+      }
       break;
     case ANALOG_READ:
-      Serial.println(analogRead(arg1));
+      if (src == HW_SERIAL) {
+        Serial.println(analogRead(arg1));
+      } else {
+        WebSerial.println(analogRead(arg1));
+      }
       break;
     case DIGITAL_READ:
-      Serial.println(digitalRead(arg1));
+      if (src == HW_SERIAL) {
+        Serial.println(digitalRead(arg1));
+      } else {
+        WebSerial.println(digitalRead(arg1));
+      }
       break;
     case ANALOG_WRITE:
       analogWrite(arg1, arg2);
-      Serial.println("OK");
+      if (src == HW_SERIAL) {
+        Serial.println("OK");
+      } else {
+        WebSerial.println("OK");
+      }
       break;
     case DIGITAL_WRITE:
       if (arg2 == 0)
         digitalWrite(arg1, LOW);
       else if (arg2 == 1)
         digitalWrite(arg1, HIGH);
-      Serial.println("OK");
+      if (src == HW_SERIAL) {
+        Serial.println("OK");
+      } else {
+        WebSerial.println("OK");
+      }
       break;
     case PIN_MODE:
       if (arg2 == 0)
         pinMode(arg1, INPUT);
       else if (arg2 == 1)
         pinMode(arg1, OUTPUT);
-      Serial.println("OK");
+      if (src == HW_SERIAL) {
+        Serial.println("OK");
+      } else {
+        WebSerial.println("OK");
+      }
       break;
     case READ_ENCODERS:
-      Serial.print(left_encoder.read());
-      Serial.print(" ");
-      Serial.println(right_encoder.read());
+      if (src == HW_SERIAL) {
+        Serial.print(left_encoder.read());
+        Serial.print(" ");
+        Serial.println(right_encoder.read());
+      } else {
+        WebSerial.print(left_encoder.read());
+        WebSerial.print(" ");
+        WebSerial.println(right_encoder.read());
+      }
       break;
     case RESET_ENCODERS:
       left_encoder.reset();
       right_encoder.reset();
       left_pid_controller.reset(left_encoder.read());
       right_pid_controller.reset(right_encoder.read());
-      Serial.println("OK");
+      if (src == HW_SERIAL) {
+        Serial.println("OK");
+      } else {
+        WebSerial.println("OK");
+      }
       break;
     case MOTOR_SPEEDS:
       /* Reset the auto stop timer */
@@ -215,7 +262,11 @@ void runCommand() {
       // to ticks per PID_INTERVAL
       left_pid_controller.set_setpoint(arg1 / PID_RATE);
       right_pid_controller.set_setpoint(arg2 / PID_RATE);
-      Serial.println("OK");
+      if (src == HW_SERIAL) {
+        Serial.println("OK");
+      } else {
+        WebSerial.println("OK");
+      }
       break;
     case MOTOR_RAW_PWM:
       /* Reset the auto stop timer */
@@ -227,7 +278,11 @@ void runCommand() {
       right_pid_controller.enable(false);
       left_motor.set_speed(arg1);
       right_motor.set_speed(arg2);
-      Serial.println("OK");
+      if (src == HW_SERIAL) {
+        Serial.println("OK");
+      } else {
+        WebSerial.println("OK");
+      }
       break;
     case UPDATE_PID:
       /* Example: "u 30:20:10:50" */
@@ -248,9 +303,73 @@ void runCommand() {
       Serial.println("OK");
       break;
     default:
-      Serial.println("Invalid Command");
+      if (src == HW_SERIAL) {
+        Serial.println("Invalid Command");
+      } else {
+        WebSerial.println("Invalid Command");
+      }
       break;
   }
+}
+
+void parseData(char chr, char src=HW_SERIAL){
+  // Terminate a command with a CR
+  if (chr == 13) {
+    if (arg == 1)
+      argv1[arg_index] = 0;
+    else if (arg == 2)
+      argv2[arg_index] = 0;
+    runCommand(src);
+    resetCommand();
+  }
+  // Use spaces to delimit parts of the command
+  else if (chr == ' ') {
+    // Step through the arguments
+    if (arg == 0)
+      arg = 1;
+    else if (arg == 1) {
+      argv1[arg_index] = 0;
+      arg = 2;
+      arg_index = 0;
+    }
+    //continue;
+  } else {
+    if (arg == 0) {
+      // The first arg is the single-letter command
+      cmd = chr;
+    } else if (arg == 1) {
+      // Subsequent arguments can be more than one character
+      argv1[arg_index] = chr;
+      arg_index++;
+    } else if (arg == 2) {
+      argv2[arg_index] = chr;
+      arg_index++;
+    }
+  }
+}
+
+/* Message callback of WebSerial */
+void recvMsg(uint8_t *data, size_t len){
+  for(int i=0; i < len; i++){
+    parseData(data[i], WEB_SERIAL);
+  }
+  parseData(13, WEB_SERIAL);
+}
+
+void configure_wifi(){
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+      Serial.printf("WiFi Failed!\n");
+      return;
+  }
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+  // WebSerial is accessible at "<IP Address>/webserial" in browser
+  WebSerial.begin(&server);
+  /* Attach Message Callback */
+  WebSerial.msgCallback(recvMsg);
+  server.begin();
 }
 
 /* Setup function--runs once at startup. */
@@ -270,6 +389,8 @@ void setup() {
 
   left_pid_controller.reset(left_encoder.read());
   right_pid_controller.reset(right_encoder.read());
+
+  configure_wifi();
 }
 
 /* Main loop.  Read and parse input from the serial port
@@ -280,40 +401,7 @@ void loop() {
   while (Serial.available() > 0) {
     // Read the next character
     chr = Serial.read();
-
-    // Terminate a command with a CR
-    if (chr == 13) {
-      if (arg == 1)
-        argv1[arg_index] = 0;
-      else if (arg == 2)
-        argv2[arg_index] = 0;
-      runCommand();
-      resetCommand();
-    }
-    // Use spaces to delimit parts of the command
-    else if (chr == ' ') {
-      // Step through the arguments
-      if (arg == 0)
-        arg = 1;
-      else if (arg == 1) {
-        argv1[arg_index] = 0;
-        arg = 2;
-        arg_index = 0;
-      }
-      continue;
-    } else {
-      if (arg == 0) {
-        // The first arg is the single-letter command
-        cmd = chr;
-      } else if (arg == 1) {
-        // Subsequent arguments can be more than one character
-        argv1[arg_index] = chr;
-        arg_index++;
-      } else if (arg == 2) {
-        argv2[arg_index] = chr;
-        arg_index++;
-      }
-    }
+    parseData(chr, HW_SERIAL);
   }
 
   // Run a PID calculation at the appropriate intervals
