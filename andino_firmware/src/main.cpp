@@ -252,11 +252,11 @@ void runCommand(char src=HW_SERIAL) {
         right_motor.set_speed(0);
         left_pid_controller.reset(left_encoder.read());
         right_pid_controller.reset(right_encoder.read());
-        left_pid_controller.enable(false);
-        right_pid_controller.enable(false);
+        left_pid_controller.disable();
+        right_pid_controller.disable();
       } else {
-        left_pid_controller.enable(true);
-        right_pid_controller.enable(true);
+        left_pid_controller.enable();
+        right_pid_controller.enable();
       }
       // The target speeds are in ticks per second, so we need to convert them
       // to ticks per PID_INTERVAL
@@ -274,8 +274,8 @@ void runCommand(char src=HW_SERIAL) {
       left_pid_controller.reset(left_encoder.read());
       right_pid_controller.reset(right_encoder.read());
       // Sneaky way to temporarily disable the PID
-      left_pid_controller.enable(false);
-      right_pid_controller.enable(false);
+      left_pid_controller.disable();
+      right_pid_controller.disable();
       left_motor.set_speed(arg1);
       right_motor.set_speed(arg2);
       if (src == HW_SERIAL) {
@@ -410,8 +410,12 @@ void loop() {
     int right_motor_speed = 0;
     left_pid_controller.compute(left_encoder.read(), left_motor_speed);
     right_pid_controller.compute(right_encoder.read(), right_motor_speed);
-    left_motor.set_speed(left_motor_speed);
-    right_motor.set_speed(right_motor_speed);
+    if (left_pid_controller.enabled()){
+      left_motor.set_speed(left_motor_speed);
+    }
+    if (right_pid_controller.enabled()){
+      right_motor.set_speed(right_motor_speed);
+    }
     nextPID += PID_INTERVAL;
   }
 
@@ -420,7 +424,7 @@ void loop() {
     lastMotorCommand = millis();
     left_motor.set_speed(0);
     right_motor.set_speed(0);
-    left_pid_controller.enable(false);
-    right_pid_controller.enable(false);
+    left_pid_controller.disable();
+    right_pid_controller.disable();
   }
 }
