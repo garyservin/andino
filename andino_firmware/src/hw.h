@@ -29,6 +29,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+// If using a drv883x motor controller, uncomment this
+//#define USE_DRV883x
+
 namespace andino {
 
 /// @brief Hardware configuration.
@@ -43,6 +46,17 @@ struct Hw {
   /// @brief Right encoder channel B pin. Connected to PC3 (digital pin 17, analog pin A3).
   static constexpr int kRightEncoderChannelBGpioPin{17};
 
+#ifdef USE_DRV883x
+  /// @brief Left motor driver IN1 pin. Connected to PD6 (digital pin 6).
+  static constexpr int kLeftMotorIn1GpioPin{6};
+  /// @brief Left motor driver IN2 pin. Connected to PB2 (digital pin 10).
+  static constexpr int kLeftMotorIn2GpioPin{10};
+
+  /// @brief Right motor driver IN1 pin. Connected to PD5 (digital pin 5).
+  static constexpr int kRightMotorIN1GpioPin{5};
+  /// @brief Right motor driver IN2 pin. Connected to PB1 (digital pin 9).
+  static constexpr int kRightMotorIN2GpioPin{9};
+#else
   /// @brief Left motor driver backward pin. Connected to PD6 (digital pin 6).
   static constexpr int kLeftMotorBackwardGpioPin{6};
   /// @brief Left motor driver forward pin. Connected to PB2 (digital pin 10).
@@ -60,6 +74,7 @@ struct Hw {
   /// @note The enable input of the L298N motor driver may be directly jumped to 5V if the board has
   /// a jumper to do so.
   static constexpr int kRightMotorEnableGpioPin{12};
+#endif
 
   /// @brief IMU sensor I2C SCL pin. Connected to PC5 (digital pin 19, analog pin A5).
   static constexpr int kImuI2cSclPin{19};

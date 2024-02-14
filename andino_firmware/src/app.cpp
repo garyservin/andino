@@ -76,7 +76,11 @@
 #include "encoder.h"
 #include "hw.h"
 #include "interrupt_in_arduino.h"
+#ifdef USE_DRV883x
+#include "motor_drv883x.h"
+#else
 #include "motor.h"
+#endif
 #include "pid.h"
 #include "pwm_out_arduino.h"
 #include "serial_stream_arduino.h"
@@ -88,6 +92,15 @@ SerialStreamArduino App::serial_stream_;
 
 Shell App::shell_;
 
+#ifdef USE_DRV883x
+PwmOutArduino App::left_motor_in1_out_(Hw::kLeftMotorIn1GpioPin);
+PwmOutArduino App::left_motor_in2_out_(Hw::kLeftMotorIn2GpioPin);
+MotorDrv883x App::left_motor_(&left_motor_in1_out_, &left_motor_in2_out_);
+
+PwmOutArduino App::right_motor_in1_out_(Hw::kRightMotorIn1GpioPin);
+PwmOutArduino App::right_motor_in2_out_(Hw::kRightMotorIn2GpioPin);
+MotorDrv883x App::right_motor_(&right_motor_in1_out_, &right_motor_in2_out_);
+#else
 DigitalOutArduino App::left_motor_enable_digital_out_(Hw::kLeftMotorEnableGpioPin);
 PwmOutArduino App::left_motor_forward_pwm_out_(Hw::kLeftMotorForwardGpioPin);
 PwmOutArduino App::left_motor_backward_pwm_out_(Hw::kLeftMotorBackwardGpioPin);
@@ -99,6 +112,7 @@ PwmOutArduino App::right_motor_forward_pwm_out_(Hw::kRightMotorForwardGpioPin);
 PwmOutArduino App::right_motor_backward_pwm_out_(Hw::kRightMotorBackwardGpioPin);
 Motor App::right_motor_(&right_motor_enable_digital_out_, &right_motor_forward_pwm_out_,
                         &right_motor_backward_pwm_out_);
+#endif
 
 InterruptInArduino App::left_encoder_channel_a_interrupt_in_(Hw::kLeftEncoderChannelAGpioPin);
 InterruptInArduino App::left_encoder_channel_b_interrupt_in_(Hw::kLeftEncoderChannelBGpioPin);
