@@ -29,37 +29,31 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#define USE_DRV8835
+
 namespace andino {
 
 /// @brief Hardware configuration.
 struct Hw {
-  /// @brief Left encoder channel A pin. Connected to PD2 (digital pin 2).
-  static constexpr int kLeftEncoderChannelAGpioPin{2};
-  /// @brief Left encoder channel B pin. Connected to PD3 (digital pin 3).
-  static constexpr int kLeftEncoderChannelBGpioPin{3};
+  /// @brief Left encoder channel A pin. Connected to PC4 (digital pin 18, analog pin A4).
+  static constexpr int kLeftEncoderChannelAGpioPin{18};
+  /// @brief Left encoder channel B pin. Connected to PD3 (digital pin 19, analog pin A5).
+  static constexpr int kLeftEncoderChannelBGpioPin{19};
 
-  /// @brief Right encoder channel A pin. Connected to PC4 (digital pin 18, analog pin A4).
-  static constexpr int kRightEncoderChannelAGpioPin{18};
-  /// @brief Right encoder channel B pin. Connected to PC5 (digital pin 19, analog pin A5).
-  static constexpr int kRightEncoderChannelBGpioPin{19};
+  /// @brief Right encoder channel A pin. Connected to PD4 (digital pin 4).
+  static constexpr int kRightEncoderChannelAGpioPin{4};
+  /// @brief Right encoder channel B pin. Connected to PD5 (digital pin 5).
+  static constexpr int kRightEncoderChannelBGpioPin{5};
 
-  /// @brief Left motor driver backward pin. Connected to PD6 (digital pin 6).
-  static constexpr int kLeftMotorBackwardGpioPin{6};
-  /// @brief Left motor driver forward pin. Connected to PB2 (digital pin 10).
-  static constexpr int kLeftMotorForwardGpioPin{10};
-  /// @brief Left motor driver enable pin. Connected to PB5 (digital pin 13).
-  /// @note The enable input of the L298N motor driver may be directly jumped to 5V if the board has
-  /// a jumper to do so.
-  static constexpr int kLeftMotorEnableGpioPin{13};
+  /// @brief Left motor driver PWM pin. Connected to PD6 (digital pin 6).
+  static constexpr int kLeftMotorPwmGpioPin{9};
+  /// @brief Left motor driver direction pin. Connected to PB1 (digital pin 9).
+  static constexpr int kLeftMotorDirectionGpioPin{6};
 
-  /// @brief Right motor driver backward pin. Connected to PD5 (digital pin 5).
-  static constexpr int kRightMotorBackwardGpioPin{5};
-  /// @brief Right motor driver forward pin. Connected to PB1 (digital pin 9).
-  static constexpr int kRightMotorForwardGpioPin{9};
-  /// @brief Right motor driver enable pin. Connected to PB4 (digital pin 12).
-  /// @note The enable input of the L298N motor driver may be directly jumped to 5V if the board has
-  /// a jumper to do so.
-  static constexpr int kRightMotorEnableGpioPin{12};
+  /// @brief Right motor driver PWM pin. Connected to PB3 (digital pin 11).
+  static constexpr int kRightMotorPwmGpioPin{11};
+  /// @brief Right motor driver direction pin. Connected to PB2 (digital pin 10).
+  static constexpr int kRightMotorDirectionGpioPin{10};
 };
 
 }  // namespace andino
