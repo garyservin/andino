@@ -45,12 +45,15 @@ def generate_launch_description():
     rsp_argument = DeclareLaunchArgument('rsp', default_value='true',
                           description='Run robot state publisher node.')
 
+    robot_argument = DeclareLaunchArgument('robot', default_value='andino',
+                          description='Select robot to use.')
+
     # Obtains andino_description's share directory path.
     pkg_andino_description = get_package_share_directory('andino_description')
 
     # Obtain urdf from xacro files.
     arguments = {'yaml_config_dir': os.path.join(pkg_andino_description, 'config', 'andino')}
-    doc = xacro.process_file(os.path.join(pkg_andino_description, 'urdf', 'andino.urdf.xacro'), mappings = arguments)
+    doc = xacro.process_file(os.path.join(pkg_andino_description, 'urdf', LaunchConfiguration('robot'), 'andino.urdf.xacro'), mappings = arguments)
     robot_desc = doc.toprettyxml(indent='  ')
     params = {'robot_description': robot_desc,
               'publish_frequency': 30.0}
@@ -65,6 +68,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        robot_argument,
         rsp_argument,
         rsp,
     ])
