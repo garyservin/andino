@@ -1,0 +1,8 @@
+mass: 0.02        # Wheel mass in Kg
+radius: 0.04      # Wheel radius in m
+length: 0.01      # Wheel length in m, considering is as a cylinder
+mesh: '../components/pololu-wheel-80x10mm-black.stl'
+scale: '0.001 0.001 0.001'
+x_offset: 0.0
+y_offset: -0.031
+z_offset: -0.017

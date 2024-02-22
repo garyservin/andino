@@ -1,0 +1,9 @@
+base:
+  mass: 0.004
+  size:
+    diameter: 0.009525
+  dx: 0.0
+  dy: 0.0
+  dz: 0.0
+  mesh: 'caster.stl'
+  scale: '0.001 0.001 0.001'

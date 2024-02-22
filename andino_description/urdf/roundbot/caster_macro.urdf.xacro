@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+<!--
+  Xacro macros were inspired on https://github.com/ros-mobile-robots/mobile_robot_description/wiki/
+-->
+<!-- ===================== Caster xacro =========================================
+
+  Xacro to create caster links and the respective joints.
+
+  params:
+  - reflect [1/-1]: value to set the side of the caster;
+  - use_fixed [bool]: wheter to use a fixed model or not
+  - caster_props [dictionary]: wheel properties;
+  - mesh [string]: file name of the wheel mesh;
+    - DEFAULT Value -> Empty string
+-->
+
+<!-- Caster wheel link & joint macro -->
+  <xacro:macro name="caster"
+                params="prefix reflect use_fixed caster_props locationright:=${0} scale:='' *origin">
+    <link name="${prefix}_caster_base_link">
+
+      <xacro:sphere_inertia  m="${caster_props['base']['mass']}"
+                          r="${caster_props['base']['size']['diameter'] / 2}"/>
+
+      <visual>
+        <origin xyz="-0.11 0.11 0.0085" rpy="${pi} 0 0" />
+        <geometry>
+            <mesh filename="package://andino_description/meshes/${robot_name}/${caster_props['base']['mesh']}" scale="${scale}"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 -0.006" rpy="0 0 0" />
+        <geometry>
+          <sphere radius="${caster_props['base']['size']['diameter'] / 2}" />
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${prefix}_caster_base_joint" type="fixed">
+      <origin xyz="${reflect * 0.067} 0 -0.045"
+              rpy="0 0 0" />
+      <parent link="base_link" />
+      <child link="${prefix}_caster_base_link" />
+      <axis xyz="0 0 1" />
+      <dynamics damping="0.01" friction="0.0"/>
+    </joint>
+  </xacro:macro>
+
+</robot>
