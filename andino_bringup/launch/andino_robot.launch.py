@@ -55,6 +55,11 @@ def generate_launch_description():
             default_value='True',
             description='Indicates whether to include rplidar launch.')
     rplidar =  LaunchConfiguration('include_rplidar')
+    robot_arg = DeclareLaunchArgument(
+            'robot',
+            default_value='andino',
+            description='Select which robot to use.')
+    robot = LaunchConfiguration('robot')
 
     # Includes andino_description launch file
     include_andino_description = IncludeLaunchDescription(
@@ -63,6 +68,7 @@ def generate_launch_description():
         ),
         launch_arguments={
             'rsp': 'True',
+            'robot': robot,
         }.items()
     )
 

@@ -34,10 +34,10 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
-import xacro
 
 def generate_launch_description():
 
@@ -48,13 +48,24 @@ def generate_launch_description():
                           description='Run robot state publisher node.')
     jsp_argument = DeclareLaunchArgument('jsp', default_value='true',
                           description='Run joint state publisher node.')
+    robot_argument = DeclareLaunchArgument('robot', default_value='andino',
+                          description='Select robot to use.')
+
 
     # Obtains andino_description's share directory path.
     pkg_andino_description = get_package_share_directory('andino_description')
 
     # Obtain urdf from xacro files.
-    doc = xacro.process_file(os.path.join(pkg_andino_description, 'urdf', 'andino.urdf.xacro'))
-    robot_desc = doc.toprettyxml(indent='  ')
+    robot_desc = ParameterValue(
+        Command([
+            'xacro ',
+            PathJoinSubstitution(
+                [
+                    pkg_andino_description, 'urdf', LaunchConfiguration('robot'), 'andino.urdf.xacro'
+                ]
+            )
+        ]),
+        value_type=str)
     params = {'robot_description': robot_desc,
               'publish_frequency': 30.0}
 
@@ -88,6 +99,7 @@ def generate_launch_description():
         jsp_argument,
         rviz_argument,
         rsp_argument,
+        robot_argument,
         jsp_gui,
         rviz,
         rsp,
