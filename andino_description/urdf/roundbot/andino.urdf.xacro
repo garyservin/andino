@@ -32,7 +32,7 @@
               base_prop="${base_props}"
               mesh="${base_props['base']['mesh']}"
               scale="${base_props['base']['scale']}">
-        <origin xyz="-0.11 -0.11 -0.12" rpy="0 0 0" />
+        <origin xyz="0 0 -0.045" rpy="0 0 0" />
   </xacro:base>
 
   <!-- Caster Wheel -->
