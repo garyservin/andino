@@ -24,7 +24,7 @@
                           r="${caster_props['base']['size']['diameter'] / 2}"/>
 
       <visual>
-        <origin xyz="-0.11 0.11 0.0085" rpy="${pi} 0 0" />
+        <origin xyz="-0.11 0.11 0.0073" rpy="${pi} 0 0" />
         <geometry>
             <mesh filename="package://andino_description/meshes/${robot_name}/${caster_props['base']['mesh']}" scale="${scale}"/>
         </geometry>
@@ -32,7 +32,7 @@
       </visual>
 
       <collision>
-        <origin xyz="0 0 -0.006" rpy="0 0 0" />
+        <origin xyz="0 0 -0.0066" rpy="0 0 0" />
         <geometry>
           <sphere radius="${caster_props['base']['size']['diameter'] / 2}" />
         </geometry>

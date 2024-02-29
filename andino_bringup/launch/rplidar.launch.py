@@ -32,7 +32,7 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, LaunchConfigurationEquals
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
 
@@ -46,6 +46,7 @@ def generate_launch_description():
     angle_compensate = LaunchConfiguration('angle_compensate', default='true')
     scan_mode = LaunchConfiguration('scan_mode', default='Sensitivity')
     laser_range_filter = LaunchConfiguration('laser_range_filter', default=False)
+    sensor = LaunchConfiguration('sensor', default='rplidar')
 
     return LaunchDescription([
 
@@ -88,6 +89,13 @@ def generate_launch_description():
             default_value=laser_range_filter,
             description='Adds a laser range filter in the output.'
         ),
+
+        DeclareLaunchArgument(
+            name='sensor',
+            default_value='rplidar',
+            description='Lidar touse',
+            choices=['rplidar', 'ldlidar']
+        ),
         ###############################
         ## Not using laser range filter.
         ###############################
@@ -103,8 +111,22 @@ def generate_launch_description():
                          'scan_mode': scan_mode,
                          'angle_compensate': angle_compensate}],
             output='screen',
-            condition=IfCondition(PythonExpression(['not ', laser_range_filter])),
+            condition=IfCondition(PythonExpression(['not ', laser_range_filter, "and", sensor, '"" == "', 'rplidar'])),
             ),
+
+        Node(
+            package='ldlidar',
+            executable='ldlidar',
+            name='ldlidar',
+            parameters=[
+                {'serial_port': serial_port},
+                'topic_name': '/scan',
+                'lidar_frame': frame_id,
+                'range_threshold': 0.005}
+            ]
+            output='screen',
+            condition=IfCondition(PythonExpression(['not ', laser_range_filter, "and", sensor, '"" == "', 'ldlidar'])),
+        ),
 
         ###############################
         ## Using laser range filter
@@ -122,8 +144,23 @@ def generate_launch_description():
                          'angle_compensate': angle_compensate}],
             output='screen',
             remappings=[('scan', 'scan_raw')],
-            condition=IfCondition(laser_range_filter)
+            condition=IfCondition(PythonExpression([laser_range_filter, "and", sensor, '"" == "', 'rplidar'])),
             ),
+
+        Node(
+            package='ldlidar',
+            executable='ldlidar',
+            name='ldlidar',
+            parameters=[
+                {'serial_port': serial_port},
+                'topic_name': '/scan',
+                'lidar_frame': frame_id,
+                'range_threshold': 0.005}
+            ]
+            output='screen',
+            remappings=[('scan', 'scan_raw')],
+            condition=IfCondition(PythonExpression([laser_range_filter, "and", sensor, '"" == "', 'ldlidar'])),
+        ),
 
         Node(
             package="laser_filters",

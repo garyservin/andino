@@ -2,10 +2,10 @@ laser:
   mass: 0.1          # Motor mass in Kg
   radius: 0.015     # Wheel radius in m
   length: 0.01      # Wheel length in m, considering is as a cylinder
-  mesh: 'rplidar-a1.stl'  # Leave it empty ('') to have a red wheel
+  mesh: 'ld19.stl'  # Leave it empty ('') to have a red wheel
   dx: 0.0
-  dy: 0.0
-  dz: 0.135
+  dy: -0.001
+  dz: 0.0925
 
 camera:
   mass: 0.1          # mass in Kg
