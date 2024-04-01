@@ -88,6 +88,7 @@ def generate_launch_description():
         ),
         launch_arguments={
             "serial_port": '/dev/ttyUSB_LIDAR',
+            "sensor": 'ldlidar',
         }.items(),
                 condition=IfCondition(rplidar)
     )
@@ -116,4 +117,5 @@ def generate_launch_description():
         camera_timer,
         rplidar_arg,
         rplidar_timer,
+        robot_arg,
     ])

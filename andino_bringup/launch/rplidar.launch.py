@@ -93,73 +93,86 @@ def generate_launch_description():
         DeclareLaunchArgument(
             name='sensor',
             default_value='rplidar',
-            description='Lidar touse',
+            description='Lidar to use',
             choices=['rplidar', 'ldlidar']
         ),
         ###############################
         ## Not using laser range filter.
         ###############################
-        Node(
-            package='rplidar_ros',
-            executable='rplidar_composition',
-            name='rplidar_node',
-            parameters=[{'channel_type':channel_type,
-                         'serial_port': serial_port,
-                         'serial_baudrate': serial_baudrate,
-                         'frame_id': frame_id,
-                         'inverted': inverted,
-                         'scan_mode': scan_mode,
-                         'angle_compensate': angle_compensate}],
-            output='screen',
-            condition=IfCondition(PythonExpression(['not ', laser_range_filter, "and", sensor, '"" == "', 'rplidar'])),
-            ),
+        #Node(
+        #    package='rplidar_ros',
+        #    executable='rplidar_composition',
+        #    name='rplidar_node',
+        #    parameters=[{'channel_type':channel_type,
+        #                 'serial_port': serial_port,
+        #                 'serial_baudrate': serial_baudrate,
+        #                 'frame_id': frame_id,
+        #                 'inverted': inverted,
+        #                 'scan_mode': scan_mode,
+        #                 'angle_compensate': angle_compensate}],
+        #    output='screen',
+        #    condition=IfCondition(PythonExpression(['not ', laser_range_filter, " and ", sensor, ' == ', 'rplidar'])),
+        #    ),
 
         Node(
-            package='ldlidar',
-            executable='ldlidar',
+            package='ldlidar_stl_ros2',
+            executable='ldlidar_stl_ros2_node',
             name='ldlidar',
             parameters=[
-                {'serial_port': serial_port},
-                'topic_name': '/scan',
-                'lidar_frame': frame_id,
-                'range_threshold': 0.005}
-            ]
-            output='screen',
-            condition=IfCondition(PythonExpression(['not ', laser_range_filter, "and", sensor, '"" == "', 'ldlidar'])),
+                {'serial_port': serial_port,
+                'topic_name': 'scan',
+                'frame_id': frame_id,
+                'product_name': 'LDLiDAR_LD19',
+                'port_name': serial_port,
+                'port_baudrate': 230400,
+                'laser_scan_dir': True,
+                'enable_angle_crop_func': False,
+                'angle_crop_min': 135.0,
+                'angle_crop_max': 225.0}
+            ],
+            condition=IfCondition(PythonExpression(['not ', laser_range_filter])),
+            #condition=IfCondition(PythonExpression(['""not "', laser_range_filter, '" and "', sensor, '" == "', '"ldlidar""'])),
         ),
 
         ###############################
         ## Using laser range filter
         ###############################
-        Node(
-            package='rplidar_ros',
-            executable='rplidar_composition',
-            name='rplidar_node',
-            parameters=[{'channel_type':channel_type,
-                         'serial_port': serial_port,
-                         'serial_baudrate': serial_baudrate,
-                         'frame_id': frame_id,
-                         'inverted': inverted,
-                         'scan_mode': scan_mode,
-                         'angle_compensate': angle_compensate}],
-            output='screen',
-            remappings=[('scan', 'scan_raw')],
-            condition=IfCondition(PythonExpression([laser_range_filter, "and", sensor, '"" == "', 'rplidar'])),
-            ),
+        #Node(
+        #    package='rplidar_ros',
+        #    executable='rplidar_composition',
+        #    name='rplidar_node',
+        #    parameters=[{'channel_type':channel_type,
+        #                 'serial_port': serial_port,
+        #                 'serial_baudrate': serial_baudrate,
+        #                 'frame_id': frame_id,
+        #                 'inverted': inverted,
+        #                 'scan_mode': scan_mode,
+        #                 'angle_compensate': angle_compensate}],
+        #    output='screen',
+        #    remappings=[('scan', 'scan_raw')],
+        #    condition=IfCondition(PythonExpression([laser_range_filter, " and ", sensor, ' == ', 'rplidar'])),
+        #    ),
 
         Node(
-            package='ldlidar',
-            executable='ldlidar',
+            package='ldlidar_stl_ros2',
+            executable='ldlidar_stl_ros2_node',
             name='ldlidar',
             parameters=[
-                {'serial_port': serial_port},
-                'topic_name': '/scan',
-                'lidar_frame': frame_id,
-                'range_threshold': 0.005}
-            ]
+                {'serial_port': serial_port,
+                'topic_name': 'scan',
+                'frame_id': frame_id,
+                'product_name': 'LDLiDAR_LD19',
+                'port_name': serial_port,
+                'port_baudrate': 230400,
+                'laser_scan_dir': True,
+                'enable_angle_crop_func': False,
+                'angle_crop_min': 135.0,
+                'angle_crop_max': 225.0}
+            ],
             output='screen',
             remappings=[('scan', 'scan_raw')],
-            condition=IfCondition(PythonExpression([laser_range_filter, "and", sensor, '"" == "', 'ldlidar'])),
+            condition=IfCondition(laser_range_filter)
+            #condition=IfCondition(PythonExpression(['"', laser_range_filter, '" and "', sensor, '" == "', '"ldlidar""'])),
         ),
 
         Node(
