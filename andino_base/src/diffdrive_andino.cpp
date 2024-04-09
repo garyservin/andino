@@ -53,9 +53,13 @@ hardware_interface::CallbackReturn DiffDriveAndino::on_init(const hardware_inter
   config_.timeout = std::stoi(info_.hardware_parameters[kTimeoutParam]);
   RCLCPP_DEBUG(logger_,
                (kTimeoutParam + static_cast<std::string>(": ") + info_.hardware_parameters[kTimeoutParam]).c_str());
-  config_.enc_ticks_per_rev = std::stoi(info_.hardware_parameters[kEncTicksPerRevParam]);
+  config_.left_enc_ticks_per_rev = std::stoi(info_.hardware_parameters[kLeftEncTicksPerRevParam]);
   RCLCPP_DEBUG(logger_,
-               (kEncTicksPerRevParam + static_cast<std::string>(": ") + info_.hardware_parameters[kEncTicksPerRevParam])
+               (kLeftEncTicksPerRevParam + static_cast<std::string>(": ") + info_.hardware_parameters[kLeftEncTicksPerRevParam])
+                   .c_str());
+  config_.right_enc_ticks_per_rev = std::stoi(info_.hardware_parameters[kRightEncTicksPerRevParam]);
+  RCLCPP_DEBUG(logger_,
+               (kRightEncTicksPerRevParam + static_cast<std::string>(": ") + info_.hardware_parameters[kRightEncTicksPerRevParam])
                    .c_str());
 
   for (const hardware_interface::ComponentInfo& joint : info.joints) {
@@ -73,8 +77,8 @@ hardware_interface::CallbackReturn DiffDriveAndino::on_init(const hardware_inter
   }
 
   // Set up the wheels
-  left_wheel_.Setup(config_.left_wheel_name, config_.enc_ticks_per_rev);
-  right_wheel_.Setup(config_.right_wheel_name, config_.enc_ticks_per_rev);
+  left_wheel_.Setup(config_.left_wheel_name, config_.left_enc_ticks_per_rev);
+  right_wheel_.Setup(config_.right_wheel_name, config_.right_enc_ticks_per_rev);
 
   RCLCPP_INFO(logger_, "Finished On init.");
 
