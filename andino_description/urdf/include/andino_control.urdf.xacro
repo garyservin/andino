@@ -11,7 +11,8 @@
       <param name="serial_device">/dev/ttyUSB_ARDUINO</param>
       <param name="baud_rate">57600</param>
       <param name="timeout">1000</param>
-      <param name="enc_ticks_per_rev">2772</param>
+      <param name="left_enc_ticks_per_rev">8344</param>
+      <param name="right_enc_ticks_per_rev">8335</param>
     </hardware>
     <joint name="left_wheel_joint">
       <command_interface name="velocity">
