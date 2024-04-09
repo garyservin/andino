@@ -72,14 +72,14 @@ namespace andino {
 /// @brief This class allows to control a DC motor by enabling it and setting its speed. The
 /// involved pins are expected to be connected to a full-bridge motor driver module, such as the
 /// DRV.
-class MotorDrv8835 {
+class MotorDrv883x {
  public:
   /// @brief Constructs a new Motor object.
   ///
   /// @param  Digital output connected to motor enable pin.
   /// @param pwm_out PWM output for the motor.
   /// @param forward_backward Pin to select if the motor is spinning forwards or backwards
-  MotorDrv8835(const PwmOut* in1,
+  MotorDrv883x(const PwmOut* in1,
         const PwmOut* in2,
         const bool slow_decay,
         const bool inverted)
@@ -88,7 +88,7 @@ class MotorDrv8835 {
         slow_decay_(slow_decay),
         inverted_(inverted) {}
 
-  MotorDrv8835(const PwmOut* in1,
+  MotorDrv883x(const PwmOut* in1,
         const PwmOut* in2,
         const bool slow_decay)
       : in1_(in1),
@@ -96,7 +96,7 @@ class MotorDrv8835 {
         slow_decay_(slow_decay),
         inverted_(false) {}
 
-  MotorDrv8835(const PwmOut* in1,
+  MotorDrv883x(const PwmOut* in1,
         const PwmOut* in2)
       : in1_(in1),
         in2_(in2),

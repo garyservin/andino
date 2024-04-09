@@ -62,19 +62,19 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include "motor_drv8835.h"
+#include "motor_drv883x.h"
 
 #include "digital_out.h"
 #include "pwm_out.h"
 
 namespace andino {
 
-void MotorDrv8835::begin() {
+void MotorDrv883x::begin() {
   in1_->begin();
   in2_->begin();
 }
 
-void MotorDrv8835::enable(bool enabled) { }
+void MotorDrv883x::enable(bool enabled) { }
 
 /*
  *  xIN1  |  xIN2  |  FUNCTION
@@ -84,7 +84,7 @@ void MotorDrv8835::enable(bool enabled) { }
  *   0    |  PWM   | Reverse PWM, fast decay
  *  PWM   |   1    | Reverse PWM, slow decay
 */
-void MotorDrv8835::set_speed(int speed) {
+void MotorDrv883x::set_speed(int speed) {
   bool forward = true;
 
   if (speed < kMinSpeed) {

@@ -33,8 +33,8 @@
 #include "encoder.h"
 #include "hw.h"
 #include "interrupt_in_arduino.h"
-#ifdef USE_DRV8835
-#include "motor_drv8835.h"
+#ifdef USE_DRV883x
+#include "motor_drv883x.h"
 #else
 #include "motor.h"
 #endif
@@ -94,11 +94,11 @@ class App {
   /// Application command shell.
   static Shell shell_;
 
-  #ifdef USE_DRV8835
+  #ifdef USE_DRV883x
   /// Left wheel motor.
   static PwmOutArduino left_motor_in1_out_;
   static PwmOutArduino left_motor_in2_out_;
-  static MotorDrv8835 left_motor_;
+  static MotorDrv883x left_motor_;
   #else
   /// Left wheel motor.
   static DigitalOutArduino left_motor_enable_digital_out_;
@@ -107,11 +107,11 @@ class App {
   static Motor left_motor_;
   #endif
 
-  #ifdef USE_DRV8835
+  #ifdef USE_DRV883x
   /// Right wheel motor.
   static PwmOutArduino right_motor_in1_out_;
   static PwmOutArduino right_motor_in2_out_;
-  static MotorDrv8835 right_motor_;
+  static MotorDrv883x right_motor_;
   #else
   /// Right wheel motor.
   static DigitalOutArduino right_motor_enable_digital_out_;
