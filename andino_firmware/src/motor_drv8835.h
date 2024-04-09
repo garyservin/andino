@@ -76,20 +76,31 @@ class MotorDrv8835 {
  public:
   /// @brief Constructs a new Motor object.
   ///
-  /// @param enable_digital_out Digital output connected to motor enable pin.
+  /// @param  Digital output connected to motor enable pin.
   /// @param pwm_out PWM output for the motor.
   /// @param forward_backward Pin to select if the motor is spinning forwards or backwards
-  MotorDrv8835(const PwmOut* pwm_out,
-        const DigitalOut* direction,
+  MotorDrv8835(const PwmOut* in1,
+        const PwmOut* in2,
+        const bool slow_decay,
         const bool inverted)
-      : pwm_out_(pwm_out),
-        direction_(direction),
+      : in1_(in1),
+        in2_(in2),
+        slow_decay_(slow_decay),
         inverted_(inverted) {}
 
-  MotorDrv8835(const PwmOut* pwm_out,
-        const DigitalOut* direction)
-      : pwm_out_(pwm_out),
-        direction_(direction),
+  MotorDrv8835(const PwmOut* in1,
+        const PwmOut* in2,
+        const bool slow_decay)
+      : in1_(in1),
+        in2_(in2),
+        slow_decay_(slow_decay),
+        inverted_(false) {}
+
+  MotorDrv8835(const PwmOut* in1,
+        const PwmOut* in2)
+      : in1_(in1),
+        in2_(in2),
+        slow_decay_(false),
         inverted_(false) {}
 
   /// @brief Initializes the motor.
@@ -113,13 +124,16 @@ class MotorDrv8835 {
   static constexpr int kMaxSpeed{255};
 
   /// PWM output connected to motor pwm pin.
-  const PwmOut* pwm_out_;
+  const PwmOut* in1_;
 
   /// Digital output connected to motor direction pin.
-  const DigitalOut* direction_;
+  const PwmOut* in2_;
+
+  /// Slow or Fast decay
+  bool slow_decay_ = false;
 
   /// Digital output connected to motor direction pin.
-  bool inverted_;
+  bool inverted_ = false;
 };
 
 }  // namespace andino

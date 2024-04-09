@@ -96,8 +96,8 @@ class App {
 
   #ifdef USE_DRV8835
   /// Left wheel motor.
-  static DigitalOutArduino left_motor_direction_out_;
-  static PwmOutArduino left_motor_pwm_out_;
+  static PwmOutArduino left_motor_in1_out_;
+  static PwmOutArduino left_motor_in2_out_;
   static MotorDrv8835 left_motor_;
   #else
   /// Left wheel motor.
@@ -109,8 +109,8 @@ class App {
 
   #ifdef USE_DRV8835
   /// Right wheel motor.
-  static DigitalOutArduino right_motor_direction_out_;
-  static PwmOutArduino right_motor_pwm_out_;
+  static PwmOutArduino right_motor_in1_out_;
+  static PwmOutArduino right_motor_in2_out_;
   static MotorDrv8835 right_motor_;
   #else
   /// Right wheel motor.

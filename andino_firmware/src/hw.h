@@ -35,25 +35,25 @@ namespace andino {
 
 /// @brief Hardware configuration.
 struct Hw {
-  /// @brief Left encoder channel A pin. Connected to PC4 (digital pin 18, analog pin A4).
-  static constexpr int kLeftEncoderChannelAGpioPin{18};
-  /// @brief Left encoder channel B pin. Connected to PD3 (digital pin 19, analog pin A5).
-  static constexpr int kLeftEncoderChannelBGpioPin{19};
+  /// @brief Left encoder channel A pin. Connected to PD3 (digital pin 19, analog pin A5).
+  static constexpr int kLeftEncoderChannelAGpioPin{19};
+  /// @brief Left encoder channel B pin. Connected to PC4 (digital pin 18, analog pin A4).
+  static constexpr int kLeftEncoderChannelBGpioPin{18};
 
-  /// @brief Right encoder channel A pin. Connected to PD4 (digital pin 4).
-  static constexpr int kRightEncoderChannelAGpioPin{4};
-  /// @brief Right encoder channel B pin. Connected to PD5 (digital pin 5).
-  static constexpr int kRightEncoderChannelBGpioPin{5};
+  /// @brief Right encoder channel A pin. Connected to PD5 (digital pin 5).
+  static constexpr int kRightEncoderChannelAGpioPin{5};
+  /// @brief Right encoder channel B pin. Connected to PD4 (digital pin 4).
+  static constexpr int kRightEncoderChannelBGpioPin{4};
 
-  /// @brief Left motor driver PWM pin. Connected to PD6 (digital pin 6).
-  static constexpr int kLeftMotorPwmGpioPin{9};
-  /// @brief Left motor driver direction pin. Connected to PB1 (digital pin 9).
-  static constexpr int kLeftMotorDirectionGpioPin{6};
+  /// @brief Left motor driver PWM pin. Connected to PB1 (digital pin 9).
+  static constexpr int kLeftMotorIn1GpioPin{9};
+  /// @brief Left motor driver direction pin. Connected to PD6 (digital pin 6).
+  static constexpr int kLeftMotorIn2GpioPin{6};
 
   /// @brief Right motor driver PWM pin. Connected to PB3 (digital pin 11).
-  static constexpr int kRightMotorPwmGpioPin{11};
+  static constexpr int kRightMotorIn1GpioPin{11};
   /// @brief Right motor driver direction pin. Connected to PB2 (digital pin 10).
-  static constexpr int kRightMotorDirectionGpioPin{10};
+  static constexpr int kRightMotorIn2GpioPin{10};
 };
 
 }  // namespace andino

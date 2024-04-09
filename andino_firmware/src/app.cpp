@@ -89,13 +89,13 @@ SerialStreamArduino App::serial_stream_;
 Shell App::shell_;
 
 #ifdef USE_DRV8835
-DigitalOutArduino App::left_motor_direction_out_(Hw::kLeftMotorDirectionGpioPin);
-PwmOutArduino App::left_motor_pwm_out_(Hw::kLeftMotorPwmGpioPin);
-MotorDrv8835 App::left_motor_(&left_motor_pwm_out_, &left_motor_direction_out_, true);
+PwmOutArduino App::left_motor_in1_out_(Hw::kLeftMotorIn1GpioPin);
+PwmOutArduino App::left_motor_in2_out_(Hw::kLeftMotorIn2GpioPin);
+MotorDrv8835 App::left_motor_(&left_motor_in1_out_, &left_motor_in2_out_);
 
-DigitalOutArduino App::right_motor_direction_out_(Hw::kRightMotorDirectionGpioPin);
-PwmOutArduino App::right_motor_pwm_out_(Hw::kRightMotorPwmGpioPin);
-MotorDrv8835 App::right_motor_(&right_motor_pwm_out_, &right_motor_direction_out_);
+PwmOutArduino App::right_motor_in1_out_(Hw::kRightMotorIn1GpioPin);
+PwmOutArduino App::right_motor_in2_out_(Hw::kRightMotorIn2GpioPin);
+MotorDrv8835 App::right_motor_(&right_motor_in1_out_, &right_motor_in2_out_);
 #else
 DigitalOutArduino App::left_motor_enable_digital_out_(Hw::kLeftMotorEnableGpioPin);
 PwmOutArduino App::left_motor_forward_pwm_out_(Hw::kLeftMotorForwardGpioPin);

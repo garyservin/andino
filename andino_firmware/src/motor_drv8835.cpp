@@ -70,26 +70,44 @@
 namespace andino {
 
 void MotorDrv8835::begin() {
-  pwm_out_->begin();
-  direction_->begin();
+  in1_->begin();
+  in2_->begin();
 }
 
 void MotorDrv8835::enable(bool enabled) { }
 
+/*
+ *  xIN1  |  xIN2  |  FUNCTION
+ *------------------------------
+ *  PWM   |   0    | Forward PWM, fast decay
+ *   1    |  PWM   | Forward PWM, slow decay
+ *   0    |  PWM   | Reverse PWM, fast decay
+ *  PWM   |   1    | Reverse PWM, slow decay
+*/
 void MotorDrv8835::set_speed(int speed) {
   bool forward = true;
 
   if (speed < kMinSpeed) {
     speed = -speed;
     forward = false;
-  }
-  if (speed > kMaxSpeed) {
+  } else if (speed > kMaxSpeed) {
     speed = kMaxSpeed;
   }
 
+  int decay = 0;
+  if (slow_decay_ && speed != 0) {
+    decay = kMaxSpeed;
+    speed = kMaxSpeed - speed;
+  }
+
   // The motor speed is controlled by sending a PWM wave to the corresponding pin.
-  pwm_out_->write(speed);
-  direction_->write(forward != inverted_);
+  if (forward == inverted_) {
+    in1_->write(speed);
+    in2_->write(decay);
+  } else {
+    in1_->write(decay);
+    in2_->write(speed);
+  }
 }
 
 }  // namespace andino
