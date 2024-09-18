@@ -10,6 +10,8 @@
 
 </div>
 
+[**UNSTABLE BRANCH**]
+
 Andino is a fully open-source diff drive robot designed for educational purposes and low-cost applications.
 It is fully integrated with ROS 2 and it is a great base platform to improve skills over the robotics field.
 With its open-source design, anyone can modify and customize the robot to suit their specific needs.
@@ -55,16 +57,16 @@ Visit [`andino_hardware`](./andino_hardware/) for assembly instructions.
 
 ### Platforms
 
-- ROS 2: Humble Hawksbill
+- ROS 2: Jazzy Jalisco
 - OS:
-  - Ubuntu 22.04 Jammy Jellyfish
-  - Ubuntu Mate 22.04 (On real robot (e.g: Raspberry Pi 4B))
+  - Ubuntu 24.04 Noble Numbat
+  - Ubuntu Server 24.04.1 (WIP) (On real robot (e.g: Raspberry Pi 4B))
 
 ### Build from Source
 
 #### Dependencies
 
-1. Install [ROS 2](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html)
+1. Install [ROS 2](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
 2. Install [colcon](https://colcon.readthedocs.io/en/released/user/installation.html)
 
 #### colcon workspace
