@@ -30,32 +30,32 @@
 #pragma once
 
 // If using a drv883x motor controller, uncomment this
-//#define USE_DRV883x
+#define USE_DRV883x
 
 namespace andino {
 
 /// @brief Hardware configuration.
 struct Hw {
-  /// @brief Left encoder channel A pin. Connected to PD2 (digital pin 2).
-  static constexpr int kLeftEncoderChannelAGpioPin{2};
-  /// @brief Left encoder channel B pin. Connected to PD3 (digital pin 3).
-  static constexpr int kLeftEncoderChannelBGpioPin{3};
+  /// @brief Left encoder channel A pin. Connected to PD3 (digital pin 19, analog pin A5).
+  static constexpr int kLeftEncoderChannelAGpioPin{19};
+  /// @brief Left encoder channel B pin. Connected to PC4 (digital pin 18, analog pin A4).
+  static constexpr int kLeftEncoderChannelBGpioPin{18};
 
-  /// @brief Right encoder channel A pin. Connected to PC2 (digital pin 16, analog pin A2).
-  static constexpr int kRightEncoderChannelAGpioPin{16};
-  /// @brief Right encoder channel B pin. Connected to PC3 (digital pin 17, analog pin A3).
-  static constexpr int kRightEncoderChannelBGpioPin{17};
+  /// @brief Right encoder channel A pin. Connected to PD5 (digital pin 5).
+  static constexpr int kRightEncoderChannelAGpioPin{5};
+  /// @brief Right encoder channel B pin. Connected to PD4 (digital pin 4).
+  static constexpr int kRightEncoderChannelBGpioPin{4};
 
 #ifdef USE_DRV883x
-  /// @brief Left motor driver IN1 pin. Connected to PD6 (digital pin 6).
-  static constexpr int kLeftMotorIn1GpioPin{6};
-  /// @brief Left motor driver IN2 pin. Connected to PB2 (digital pin 10).
-  static constexpr int kLeftMotorIn2GpioPin{10};
+  /// @brief Left motor driver IN1 pin. Connected to PB1 (digital pin 9).
+  static constexpr int kLeftMotorIn1GpioPin{9};
+  /// @brief Left motor driver IN2 pin. Connected to PD6 (digital pin 6).
+  static constexpr int kLeftMotorIn2GpioPin{6};
 
-  /// @brief Right motor driver IN1 pin. Connected to PD5 (digital pin 5).
-  static constexpr int kRightMotorIN1GpioPin{5};
-  /// @brief Right motor driver IN2 pin. Connected to PB1 (digital pin 9).
-  static constexpr int kRightMotorIN2GpioPin{9};
+  /// @brief Right motor driver IN1 pin. Connected to PB3 (digital pin 11).
+  static constexpr int kRightMotorIN1GpioPin{11};
+  /// @brief Right motor driver IN2 pin. Connected to PB2 (digital pin 10).
+  static constexpr int kRightMotorIN2GpioPin{10};
 #else
   /// @brief Left motor driver backward pin. Connected to PD6 (digital pin 6).
   static constexpr int kLeftMotorBackwardGpioPin{6};
